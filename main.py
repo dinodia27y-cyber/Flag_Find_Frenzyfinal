@@ -10,8 +10,15 @@ total_questions = 10
 current_question = None
 current_mode = 'mix up'
 MAX_OPTIONS = 4
+name_entry = None
+save_button = None
+save_note = None
+MAX_LEADERBOARD_ENTRIES = 5
+leaderboard_screen = None
+leaderboard_text_label = None
 
 BASE = os.getcwd()
+LEADERBOARD_PATH = os.path.join(BASE, 'data', 'leaderboard.txt')
 FACT_FILES = {
     'United States': os.path.join(BASE, 'facts/US.txt'),
     'Japan': os.path.join(BASE, 'facts/JP.txt'),
@@ -86,6 +93,45 @@ def read_fact(path):
         return file.read()
 
 
+def load_leaderboard():
+    if not os.path.exists(LEADERBOARD_PATH):
+        return []
+    entries = []
+    with open(LEADERBOARD_PATH, 'r') as file:
+        for line in file:
+            name_score = line.strip().split('|')
+            if len(name_score) == 2:
+                try:
+                    value = int(name_score[1])
+                    entries.append((name_score[0], value))
+                except ValueError:
+                    value = None
+    def by_score(item):
+        return item[1]
+    entries.sort(key=by_score, reverse=True)
+    return entries[:MAX_LEADERBOARD_ENTRIES]
+
+
+def record_score(name, value):
+    directory = os.path.dirname(LEADERBOARD_PATH)
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+    with open(LEADERBOARD_PATH, 'a') as file:
+        file.write(name + '|' + str(value) + '\n')
+
+
+def leaderboard_text():
+    scores = load_leaderboard()
+    if not scores:
+        return 'No scores yet.'
+    return '\n'.join(f"{index + 1}. {item[0]} - {item[1]}" for index, item in enumerate(scores))
+
+
+def show_leaderboard_screen():
+    leaderboard_text_label.config(text=leaderboard_text())
+    show_screen(leaderboard_screen)
+
+
 def load_data(choice):
     countries.clear()
     for name in MODE_GROUPS[choice]:
@@ -134,8 +180,17 @@ def go_back_to_quiz():
     ask_question()
 
 
+def save_score():
+    player = name_entry.get().strip() or 'Player'
+    record_score(player, score)
+    save_note.config(text='Saved! Click Leaderboard to see top scores.')
+    name_entry.delete(0, tk.END)
+
+
 def finish_game():
     result_label.config(text='Final Score: ' + str(score) + '/' + str(len(question_queue)))
+    save_note.config(text='Enter your name and press Save Score.')
+    name_entry.delete(0, tk.END)
     show_screen(result_screen)
 
 
@@ -223,6 +278,8 @@ def ask_question():
 
 
 def go_home():
+    save_note.config(text='')
+    name_entry.delete(0, tk.END)
     show_screen(start_screen)
 
 
@@ -235,7 +292,8 @@ def submit_typing():
 def build_window():
     global window, start_screen, quiz_screen, fact_screen, result_screen
     global question_label, picture_label, option_buttons, score_label, fact_message, result_label
-    global answer_entry, submit_button, mode_entry
+    global answer_entry, submit_button, mode_entry, name_entry, save_button, save_note
+    global leaderboard_screen, leaderboard_text_label
 
     window = tk.Tk()
     window.title('Flag-Find Frenzy')
@@ -247,8 +305,9 @@ def build_window():
     quiz_screen = tk.Frame(window)
     fact_screen = tk.Frame(window)
     result_screen = tk.Frame(window)
+    leaderboard_screen = tk.Frame(window)
 
-    for frame in (start_screen, quiz_screen, fact_screen, result_screen):
+    for frame in (start_screen, quiz_screen, fact_screen, result_screen, leaderboard_screen):
         frame.grid(row=0, column=0, sticky='nsew')
     title = tk.Label(start_screen, text='Flag-Find Frenzy', font=('Arial', 24))
     title.pack(pady=20)
@@ -257,6 +316,8 @@ def build_window():
     mode_entry = tk.Entry(start_screen, width=20)
     mode_entry.insert(0, current_mode)
     mode_entry.pack(pady=6)
+    tk.Button(start_screen, text='Start', width=20, command=start_game).pack(pady=12)
+    tk.Button(start_screen, text='Leaderboard', width=20, command=show_leaderboard_screen).pack(pady=4)
     picture_label = tk.Label(quiz_screen)
     picture_label.pack(pady=12)
     question_label = tk.Label(quiz_screen, text='Question 0', font=('Arial', 16))
@@ -275,13 +336,17 @@ def build_window():
     tk.Button(fact_screen, text='Next Question', command=go_back_to_quiz).pack(pady=8)
     result_label = tk.Label(result_screen, text='', font=('Arial', 18))
     result_label.pack(pady=15)
+    save_note = tk.Label(result_screen, text='', font=('Arial', 12))
+    save_note.pack(pady=4)
+    name_entry = tk.Entry(result_screen, width=25)
+    name_entry.pack(pady=4)
+    save_button = tk.Button(result_screen, text='Save Score', command=save_score)
+    save_button.pack(pady=4)
     tk.Button(result_screen, text='Play Again', command=go_home).pack(pady=8)
-
-    def set_mode_and_start():
-        start_game()
-
-    tk.Button(start_screen, text='Start', width=20, command=set_mode_and_start).pack(pady=12)
-
+    tk.Label(leaderboard_screen, text='Top Scores', font=('Arial', 20)).pack(pady=20)
+    leaderboard_text_label = tk.Label(leaderboard_screen, text='', font=('Arial', 14), justify='left')
+    leaderboard_text_label.pack(pady=10)
+    tk.Button(leaderboard_screen, text='Back', command=go_home).pack(pady=12)
     show_screen(start_screen)
     window.mainloop()
 build_window()
