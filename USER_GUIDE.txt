@@ -1,0 +1,34 @@
+Flag-Find Frenzy - User Guide
+==============================
+
+Purpose
+- Guess country flags, learn a quick fact, and climb the leaderboard.
+- Uses the local data in `facts/` (text facts) and `data/*` (flag images).
+
+Requirements
+- Python 3.8+ 
+- Run from the project folder so image/fact paths resolve correctly.
+
+Quick Start
+2) Launch the game: `python3 main.py`
+3) The window opens to the Start screen; choose a mode or keep the default `mix up`, then click Start.
+
+Game Modes & Question Types
+- `mix up`: pulls from every difficulty.
+- `easy` / `standard`: multiple-choice buttons.
+- `advanced` / `expert`: type your answer in the input box and press Submit.
+
+Playing the Game
+- Each round shows a flag and the question counter. Multiple-choice modes display up to four buttons; typing modes show a text box.
+- Pick or type your answer. Feedback appears with the correct country and a fun fact.
+- Click Next Question to continue until all questions finish (up to 10 per game).
+- Flags come from `data/easy|standard|advanced|expert`, facts from matching files in `facts/`.
+
+
+Fact & Result flow
+- After each guess you see: "Nice job!" or "Not quite." plus the correct answer and its fact.
+- Result screen: Final Score, name box, Save Score, Play Again, and a note to open Leaderboard.
+
+Troubleshooting
+- If the window shows broken images, confirm you ran from the repo root so relative paths in `main.py` resolve.
+- To clear saved scores, delete `data/leaderboard.txt` (optional backup first).
